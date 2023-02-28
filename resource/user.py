@@ -112,7 +112,6 @@ class UserLoginResource(Resource) :
 # 로그아웃
 jwt_blacklist = set()
 class UserLogoutResource(Resource) :
-
     @jwt_required()
     def post(self) :
         
@@ -125,7 +124,7 @@ class UserLogoutResource(Resource) :
 # 회원탈퇴
 class UserInfoDeleteResource(Resource) :
     @jwt_required()
-    def get(self) :
+    def delete(self) :
         jti = get_jwt()['jti']
         jwt_blacklist.add(jti)
 
@@ -188,6 +187,46 @@ class UserInfoResource(Resource) :
             return {"result" : "fail", "error" : str(e)}, 500
 
         if len(result_list) == 0 :
-            return {"error" : "잘못된 유저 아이디 입니다"}, 400
+            return {"error" : "잘못된 유저 아이디"}, 400
 
         return {"result" : "success", "user" : result_list[0]}, 200
+
+# 아이디찾기
+class UserIdSearchResource(Resource) :
+    def post(self) :
+        # { "name": "김이름,
+        # "phone": "010-1234-5678"}
+
+        data = request.get_json()
+
+        try :
+            connection = get_connection()
+
+            query = '''select email
+                    from user
+                    where name = %s and phone = %s ; '''
+
+            record = (data["name"], data["phone"])
+
+            cursor = connection.cursor(dictionary=True)
+
+            cursor.execute(query, record)
+
+            result_list = cursor.fetchall()
+
+            cursor.close()
+            connection.close()
+
+        except Error as e :
+            print(e)
+            cursor.close()
+            connection.close()
+
+            return {"result" : "fail", "error" : str(e)}, 500
+
+        return {"result" : "success", "email" : result_list}, 200
+
+# 비밀번호찾기
+class UserPasswordSearchResource(Resource) :
+    def post(self) :
+        pass
